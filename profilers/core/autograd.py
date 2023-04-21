@@ -1,5 +1,5 @@
 import torch
-from core.backward import flatten_operation_output, get_grad_fn
+from profilers.core.backward import flatten_operation_output, get_grad_fn
 
 
 class AutogradEngine:

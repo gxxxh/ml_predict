@@ -114,4 +114,4 @@ if __name__ == "__main__":
     # test nvprof
     # doParse("/root/guohao/ml_predict/out/pyprof/resnet/nvprof/resnet.sql")
     # test nsight
-    doParse("/root/guohao/ml_predict/tests/benchmark/conv2d.sqlite")
+    doParse("/root/guohao/ml_predict/benchmark/conv2d/conv2d0.sqlite")

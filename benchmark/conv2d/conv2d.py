@@ -19,8 +19,6 @@ def config_to_profiler_args(bias,
                             kernel_size,
                             stride,
                             padding):
-    print("Initializing PyProf...")
-    pyprof.init()
 
     device = torch.device('cuda')
     conv2d = torch.nn.Conv2d(
@@ -30,13 +28,13 @@ def config_to_profiler_args(bias,
         stride=stride,
         padding=padding,
         bias=bias,
-    ).to(device)
+    )
     inp = torch.randn((
         batch,
         in_channels,
         image_size,
         image_size,
-    ), device=device)
+    ))
     # NOTE: This is important: for most convolutions, we will also need the
     #       gradient with respect to the input to be able to backpropagate to
     #       earlier operations in the network.
@@ -65,7 +63,7 @@ def main():
     if kwargs is None:
         logger.info('no proper config')
         return
-    profiler = OperationProfiler(device=None)
+    profiler = OperationProfiler(device='cuda', op_name="conv2d")
     profiler.measure_operation(**kwargs)
 
 if __name__ == '__main__':
@@ -75,5 +73,6 @@ if __name__ == '__main__':
         "level": logging.INFO,
     }
     logging.basicConfig(**kwargs)
-
+    logger.info("Initializing PyProf...")
+    pyprof.init()
     main()

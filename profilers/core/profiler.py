@@ -22,7 +22,7 @@ class OperationProfiler:
         if device!=None:
             self._device = torch.device(device)
         else:
-            self._device = torch.device('cpu')
+            self._device = torch.device('cuda')
         self._warm_up = warm_up
         self._measure_for = measure_for
 
@@ -33,23 +33,24 @@ class OperationProfiler:
         forward_args, forward_kwargs = self._get_args_for_profiling(
             args, kwargs, for_inplace)
 
-        # We need separate copies of the arguments for the forward and backward
-        # measurements because func might be inplace. Running an inplace
-        # function repeatedly will affect the autograd graph, which causes
-        # problems when we try to measure the backward pass.
-        backward_args, backward_kwargs = self._get_args_for_profiling(
-            args, kwargs, for_inplace)
+        # # We need separate copies of the arguments for the forward and backward
+        # # measurements because func might be inplace. Running an inplace
+        # # function repeatedly will affect the autograd graph, which causes
+        # # problems when we try to measure the backward pass.
+        # backward_args, backward_kwargs = self._get_args_for_profiling(
+        #     args, kwargs, for_inplace)
 
-        # copy data to device
+        # copy model to device
         func.to(self._device)
 
-        # retval is used for backward
-        retval = func(*backward_args, **backward_kwargs)
-        if not backward_available(retval):
+        # # retval is used for backward
+        # retval = func(*backward_args, **backward_kwargs)
+        # if not backward_available(retval):
+        if False:
             logger.info("profile only forward process of {}".format(self.op_name))
             def train_process():
                 import torch.cuda.nvtx as nvtx
-                nvtx.range_push("layer:Conv")
+                nvtx.range_push(f"layer:{self.op_name}")
                 # forward
                 func(*forward_args, **forward_kwargs)
                 nvtx.range_pop()
@@ -67,9 +68,29 @@ class OperationProfiler:
                 # backward
                 engine.run_backward()
             self._run_profile(train_process)
-
+        self._free_args(forward_args, forward_kwargs)
         return
 
+    def _free_args(self, args, kwargs):
+        cloned_args = tuple(map(
+            lambda arg: self._free_tensor(arg), args))
+        cloned_kwargs = {
+            key: self._free_tensor(value)
+            for key, value in kwargs.items()
+        }
+        del cloned_args,cloned_kwargs
+
+
+    def _free_tensor(self, argument):
+        if isinstance(argument, torch.Tensor):
+            return argument.cpu()
+        if isinstance(argument, tuple):
+            return tuple(map(
+                lambda arg: self._free_tensor(arg), argument))
+        if isinstance(argument, list):
+            return list(map(
+                lambda arg: self._free_tensor(arg), argument))
+        return argument
     def _get_args_for_profiling(self, args, kwargs, for_inplace=False):
         cloned_args = tuple(map(
             lambda arg: self._clone_tensors(arg, for_inplace), args))
@@ -109,6 +130,7 @@ class OperationProfiler:
             for _ in range(self._measure_for):
                 runnable()
             profiler.stop()
+
 
 
 # Populated manually from:

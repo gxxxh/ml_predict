@@ -1,15 +1,9 @@
 import logging
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.cuda.profiler as profiler
-import torch.optim as optim
-
 import pyprof
 from benchmark.conv2d.conv2d import config_to_profiler_args
 from profilers.core.profiler import OperationProfiler
-
-def main():
+logger = logging.getLogger(__name__)
+def test_benchmark(i):
 
     kwargs = config_to_profiler_args(
         bias=True,
@@ -20,7 +14,7 @@ def main():
         kernel_size=2,
         stride=3,
         padding=1)
-    profiler = OperationProfiler(op_name='conv2d', device='cuda')
+    profiler = OperationProfiler(op_name=f'Conv2d{i}', device='cuda')
     profiler.measure_operation(**kwargs)
 
 
@@ -31,4 +25,14 @@ if __name__ == '__main__':
         "level": logging.INFO,
     }
     logging.basicConfig(**kwargs)
-    main()
+    logger.info("Initializing PyProf...")
+    pyprof.init()
+    # test_benchmark(0)
+    for i in range(5):
+        logger.info(f"Start Profile {i}")
+        test_benchmark(i)
+        import torch
+        import gc
+        gc.collect()
+        torch.cuda.empty_cache()
+

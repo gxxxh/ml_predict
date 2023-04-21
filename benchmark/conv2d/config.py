@@ -2,7 +2,6 @@ import argparse
 import logging
 import math
 from benchmark.config_generator import OperatorConfigGenerator
-from benchmark.conv2d.conv2d import config_to_profiler_args
 
 logger = logging.getLogger(__name__)
 
@@ -55,11 +54,14 @@ def index_filter(args, index):
     # image_size (1-dim) * in_channels * out_channels * kernel_size
     conv_size = math.pow(config[2], 1.15) * config[3] * config[4] * config[5]
 
+    # padded_input_size should larger than kernel size
+    padded_input_size = config[2] + 2 * config[7]
+    kernel_size = config[5]
     # NOTE: This value was chosen arbitrarily: we don't want the in/out
     #       channels and image size to all be too large. This way, large values
     #       for the in/out channels would lead to a smaller image size (and
     #       vice versa).
-    return conv_size <= 35000000 and config[3] >= MIN_IN_CHANNELS and config[4] >= MIN_OUT_CHANNELS
+    return conv_size <= 35000000 and config[3] >= MIN_IN_CHANNELS and config[4] >= MIN_OUT_CHANNELS and padded_input_size >= kernel_size
 
 
 def main():
@@ -71,6 +73,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     configGenerator.add_args(parser)
+    # todo batches should between [1,2,4,8,16,32,64,128,256,512,1024]
     parser.add_argument('--batches', type=int, default=64)
     parser.add_argument('--image-size', type=int, default=256)
     parser.add_argument('--in-channels', type=int, default=2048)
@@ -96,13 +99,12 @@ def main():
 
     # Conv2d has filtering, so we won't have exactly 200000 points (the
     # default). So here we increase the number of starting points.
-    if args.num_points == 200000:
-        args.num_points *= 6
-
+    args.num_points *= 6
     configs = configGenerator.parse_configurations(args, num_configs)
+    logger.info("Generated %d configurations", len(configs))
     with open(args.save, "w") as f:
         for config in configs:
-            f.write(str(config) + '\n')
+            f.write(config+ '\n')
         f.close()
 
 

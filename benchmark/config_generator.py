@@ -22,7 +22,7 @@ class OperatorConfigGenerator:
     def add_args(self, parser):
         parser.add_argument('--device', type=str, default='cuda')
         parser.add_argument('--seed', type=int, default=1337)
-        parser.add_argument('--num-points', type=int, default=200000)
+        parser.add_argument('--num-points', type=int, default=10000)
         # using to  split sample to different worker
         parser.add_argument('--rank', type=int, default=0)
         parser.add_argument('--world-size', type=int, default=1)
@@ -66,5 +66,7 @@ class OperatorConfigGenerator:
         configs = []
         for i in range(0, len(to_record)):
             config = self._index_to_config(args, to_record[i])
-            configs.append(config)
+            config_str = str(config)[1:-1]
+            config_str = config_str.replace(', ', ' ')
+            configs.append(config_str)
         return configs
