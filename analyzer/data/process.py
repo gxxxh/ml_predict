@@ -1,10 +1,6 @@
 import pandas as pd
 import os
 
-
-
-
-
 def aggregate(dir):
     # Aggregate all the csv files in the directory
     # and return a dataframe

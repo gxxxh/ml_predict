@@ -23,11 +23,11 @@ def run_resnet50():
 
     for batch_size in RESNET50_BATCHES:
         inputs = rep.skyline_input_provider(batch_size)
-
         def runnable():
             iteration(*inputs)
 
         N = 10
+        # todo analyze cupti counters
         with torch.profiler.profile(
                 activities=[
                     torch.profiler.ProfilerActivity.CPU,
@@ -35,7 +35,8 @@ def run_resnet50():
                 record_shapes=True,
                 profile_memory=True,
                 with_stack=True,
-
+                with_flops= True,
+                with_modules=True,
                 # In this example with wait=1, warmup=1, active=2,
                 # profiler will skip the first step/iteration,
                 # start warming up on the second, record
@@ -43,14 +44,13 @@ def run_resnet50():
                 # after which the trace will become available
                 # and on_trace_ready (when set) is called;
                 # the cycle repeats starting with the next step
-
                 schedule=torch.profiler.schedule(
                     wait=2,
                     warmup=3,
                     active=N - 5),
                 # on_trace_ready=trace_handler
                 on_trace_ready=torch.profiler.tensorboard_trace_handler(
-                    "/root/guohao/ml_predict/tests/log")
+                    "/root/guohao/ml_predict/out/traces")
                 # used when outputting for tensorboard
         ) as p:
             for iter in range(N):
