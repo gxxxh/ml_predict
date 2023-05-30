@@ -21,14 +21,14 @@ import tensorflow_datasets as tfds
 # tfds.disable_progress_bar()
 
 (ds_train, ds_test), ds_info = tfds.load(
-    'mnist',
+    'mnist'
     split=['train', 'test'],
     shuffle_files=True,
     as_supervised=True,
     with_info=True,
     try_gcs=False,
 )
-print("load data finish!")
+print("load tf_models finish!")
 
 def normalize_img(image, label):
   """Normalizes images: `uint8` -> `float32`."""
@@ -57,6 +57,7 @@ logs = "logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
 tboard_callback = tf.keras.callbacks.TensorBoard(log_dir = logs,
                                                  histogram_freq = 1,
                                                  profile_batch = '500,520')
+# validation
 
 model.fit(ds_train,
           epochs=2,
